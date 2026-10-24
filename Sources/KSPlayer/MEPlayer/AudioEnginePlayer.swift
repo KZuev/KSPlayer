@@ -176,6 +176,14 @@ public class AudioEnginePlayer: AudioOutput {
         engine.stop()
         engine.reset()
         sourceNode = AVAudioSourceNode(format: audioFormat) { [weak self] _, timestamp, frameCount, audioBufferList in
+            // Every callback must initialise the whole output, including
+            // first-render, missing source and format-change early returns.
+            // Otherwise untouched bytes can be rendered as audible noise.
+            for buffer in UnsafeMutableAudioBufferListPointer(audioBufferList) {
+                if let data = buffer.mData {
+                    memset(data, 0, Int(buffer.mDataByteSize))
+                }
+            }
             if timestamp.pointee.mSampleTime == 0 {
                 return noErr
             }
