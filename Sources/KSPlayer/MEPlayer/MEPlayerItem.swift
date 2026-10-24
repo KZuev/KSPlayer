@@ -49,6 +49,11 @@ public final class MEPlayerItem: Sendable {
     /// `setVideo(time:position:)` 渲染时更新；暂停 / stall 时无新帧绘制即冻结在最后一帧。
     /// 与 `currentPlaybackTime` 的差别：后者跟 audioClock，而 audioClock 在 prefill /
     /// cold-start / seek 后会瞬间被推到音频 buffer 头，跑在画面之前。
+    /// Byte offset of the displayed packet in the media file, not the HTTP read cursor.
+    public var displayedVideoByteOffset: Int64? {
+        state != .seeking && videoClock.position >= 0 ? videoClock.position : nil
+    }
+
     public var displayedVideoTime: TimeInterval {
         state == .seeking ? seekTime : (videoClock.time - startTime).seconds
     }
