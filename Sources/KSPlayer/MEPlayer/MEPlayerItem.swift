@@ -450,6 +450,12 @@ extension MEPlayerItem {
                 let flags = seekByBytes ? AVSEEK_FLAG_BYTE : 0
                 let seekStartTime = CACurrentMediaTime()
                 let result = avformat_seek_file(formatCtx, -1, Int64.min, timestamp.value, Int64.max, flags)
+                if result >= 0, options.isAccurateSeek {
+                    // avformat_seek_file lands at a preceding keyframe. Apply
+                    // the same decoder trim as an interactive accurate seek;
+                    // moving clocks alone exposes pre-target frames on resume.
+                    allPlayerItemTracks.forEach { $0.seek(time: options.startPlayTime) }
+                }
                 audioClock.time = timestamp
                 videoClock.time = timestamp
                 KSLog("start PlayTime: \(timestamp.seconds) spend Time: \(CACurrentMediaTime() - seekStartTime)")
