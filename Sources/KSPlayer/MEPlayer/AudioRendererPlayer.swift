@@ -62,6 +62,7 @@ public class AudioRendererPlayer: AudioOutput {
     }
 
     public func play() {
+        guard isPaused else { return }
         let time: CMTime
         if #available(macOS 11.3, iOS 14.5, tvOS 14.5, *) {
             // 判断是否有足够的缓存，有的话就用当前的时间。seek的话，需要清空缓存，这样才能取到最新的时间。
@@ -69,6 +70,9 @@ public class AudioRendererPlayer: AudioOutput {
                 time = synchronizer.currentTime()
             } else {
                 if let currentRender = renderSource?.getAudioOutputRender() {
+                    // Keep the frame used to establish the clock: dropping it
+                    // creates a gap at every cold start and seek.
+                    if let sampleBuffer = currentRender.toCMSampleBuffer() { renderer.enqueue(sampleBuffer) }
                     time = currentRender.cmtime
                 } else {
                     time = .zero
@@ -76,6 +80,7 @@ public class AudioRendererPlayer: AudioOutput {
             }
         } else {
             if let currentRender = renderSource?.getAudioOutputRender() {
+                if let sampleBuffer = currentRender.toCMSampleBuffer() { renderer.enqueue(sampleBuffer) }
                 time = currentRender.cmtime
             } else {
                 time = .zero
